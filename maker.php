@@ -1,31 +1,4 @@
 <?php
-/*
-ini_set('xdebug.var_display_max_children', -1);
-ini_set('xdebug.var_display_max_data', -1);
-ini_set('xdebug.var_display_max_depth', -1);
-*/
-//$argv[0] = dirname(__FILE__)."bin/composer.phar";
-//$argv[0] = 'phar://composer.phar/bin/composer';
-//$argv[1] = "install";
-
-/*class My extends Thread{
-	public function run(){
-		var_dump(dirname(__FILE__)."/bin/composer.phar");
-		//if(!isset($_SERVER['argv'][0])){
-			//$_SERVER['argv'][0] = dirname(__FILE__)."/bin/composer.phar";
-		//}
-		var_dump($_SERVER);
-		//global $_SERVER;
-		$_SERVER['argv'][0] = dirname(__FILE__)."/bin/composer.phar";
-		$_SERVER['argv'][1] = "install";
-		$_SERVER['argc'] = count($_SERVER['argv']);
-		require "bin/composer.phar";
-	}
-}
-$my = new My();
-$my->start();
-var_dump($my->join());
-*/
 
 class maker{
 	public $canReceiveShutdown = false;//
@@ -369,23 +342,3 @@ if(isset($_SERVER['argv'][1])){
 }else{
 	help();
 }
-
-
-
-/*if(isset($_SERVER['argv'][1])){
-	putenv(POCKETMINE_MP_ZIP_URL='.$_SERVER['argv'][1]);
-}else{
-	putenv(POCKETMINE_MP_ZIP_URL=https://github.com/NetherGamesMC/PocketMine-MP/archive/bedrock-1.13.zip'));
-}*/
-
-/*if(isset($_SERVER['argv'][0])){
-	$_SERVER['argv'][0] = __FILE__;
-}
-$_SERVER['argv'][1] = "install";
-$_SERVER['argc'] = count($_SERVER['argv']);
-require "bin/composer.phar";
-
-echo "!!";
-*/
-//$p = new Phar("bin/composer.phar", 0);
-//var_dump($p->getStub());
