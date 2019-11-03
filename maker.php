@@ -1,5 +1,4 @@
 <?php
-
 class maker{
 	public $canReceiveShutdown = false;//
 
