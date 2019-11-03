@@ -13,11 +13,11 @@ option:
 　[composerinstallnv | cinv] composerを検証せずにcomposerを「bin/composer.phar」にインストールします。
 ```
 ## Example
-### command
+### Command
 ```
 php maker.php https://github.com/pmmp/PocketMine-MP/archive/stable.zip
 ```
-### console output
+### Console Output
 ```
 「composer.phar」を検証せずにダウンロードしております...
 Pocketmine-MPをダウンロードしています...(https://github.com/pmmp/PocketMine-MP/archive/stable.zip)
