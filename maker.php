@@ -21,7 +21,7 @@ class maker{
 			$this->pocketmine_mp_unzip();
 		}
 		if(!file_exists(dirname(__FILE__) . DIRECTORY_SEPARATOR . "vendor")){
-			echo "「bin\composer.phar install」をプログラム内より実行しております...(exec未使用...)";
+			echo "「bin\composer.phar install --no-dev --classmap-authoritative」をプログラム内より実行しております...(exec未使用...)";
 			echo PHP_EOL;
 			$this->ComposerRun();
 		}else{
@@ -91,6 +91,8 @@ class maker{
 			$_SERVER['argv'][0] = dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin". DIRECTORY_SEPARATOR . "composer.phar";
 		}
 		$_SERVER['argv'][1] = "install";
+		$_SERVER['argv'][2] = "--no-dev";
+		$_SERVER['argv'][3] = "--classmap-authoritative";
 		$_SERVER['argc'] = count($_SERVER['argv']);
 		require "bin" . DIRECTORY_SEPARATOR . "composer.phar";
 	}
