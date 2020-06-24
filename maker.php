@@ -221,7 +221,7 @@ class maker{
 		if(!file_exists(dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar")){
 			mkdir(dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin", 0744, true);
 		}
-		$this->downloadFile("https://getcomposer.org/composer.phar",dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar");//
+		$this->downloadFile("https://getcomposer.org/composer-stable.phar",dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar");//
 	}
 
 	public function InstallComposerSafely(){
