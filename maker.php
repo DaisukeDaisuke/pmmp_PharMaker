@@ -213,8 +213,8 @@ class maker{
 
 	public function cleanup(){
 		@unlink(dirname(__FILE__)  . DIRECTORY_SEPARATOR . ".gitmodules");
-		@unlink(dirname(__FILE__)  . DIRECTORY_SEPARATOR . "composer.json");
-		@unlink(dirname(__FILE__)  . DIRECTORY_SEPARATOR . "composer.lock");
+		//@unlink(dirname(__FILE__)  . DIRECTORY_SEPARATOR . "composer.json");
+		//@unlink(dirname(__FILE__)  . DIRECTORY_SEPARATOR . "composer.lock");
 	}
 
 	public function InstallComposerWithoutConfirmation(){
