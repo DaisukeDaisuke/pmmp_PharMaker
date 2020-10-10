@@ -3,24 +3,24 @@ class maker{
 	public $canReceiveShutdown = false;//
 
 	public function run(String $pocketmine_mp_zip_url){
-		if(!file_exists(dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar")){
+		if(!file_exists(__DIR__. DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar")){
 			echo "「composer.phar」を検証せずにダウンロードしております...";
 			echo PHP_EOL;
 			$this->InstallComposerWithoutConfirmation();
 		}
-		if(!file_exists(dirname(__FILE__) . DIRECTORY_SEPARATOR . "src")){
+		if(!file_exists(__DIR__. DIRECTORY_SEPARATOR . "src")){
 			if(!self::isSafetyGithubURL($pocketmine_mp_zip_url)){
 				echo "指定致しましたurlは不正にてございます。";
 				return;
 			}
 			echo "Pocketmine-MPをダウンロードしています...(".$pocketmine_mp_zip_url.")";
 			echo PHP_EOL;
-			$this->downloadFile($pocketmine_mp_zip_url,dirname(__FILE__) . DIRECTORY_SEPARATOR . "PocketMine-MP.zip");
+			$this->downloadFile($pocketmine_mp_zip_url, __DIR__. DIRECTORY_SEPARATOR . "PocketMine-MP.zip");
 			echo "PocketMine-MPを解凍しております...";
 			echo PHP_EOL;
 			$this->pocketmine_mp_unzip();
 		}
-		if(!file_exists(dirname(__FILE__) . DIRECTORY_SEPARATOR . "vendor")){
+		if(!file_exists(__DIR__. DIRECTORY_SEPARATOR . "vendor")){
 			echo "「bin\composer.phar install --no-dev --classmap-authoritative」をプログラム内より実行しております...(exec未使用...)";
 			echo PHP_EOL;
 			$this->ComposerRun();
@@ -44,7 +44,7 @@ class maker{
 	}
 
 	public function pocketmine_mp_unzip(){
-		$rootpath = dirname(__FILE__);
+		$rootpath = __DIR__;
 		$zippath = $rootpath."/PocketMine-MP.zip";
 		
 		$zip = new ZipArchive();
@@ -58,12 +58,13 @@ class maker{
 			$targetpath = "zip://".$zippath."#".$filename."src";
 			for($i = 0; $i < $zip->numFiles; $i++){
 				$zipfilename = "zip://".$zippath."#".$zip->getNameIndex($i);
-				if(strpos($zip->getNameIndex($i),$filename.'src/') === false){
+				var_dump($zip->getNameIndex($i));
+				if(strpos($zip->getNameIndex($i),$filename.'src/') === false&&strpos($zip->getNameIndex($i),$filename.'resources/') === false){
  					continue;
 				}
 				$target = "zip://".$zippath."#".$zip->getNameIndex($i);
 				$output = $rootpath.DIRECTORY_SEPARATOR.str_replace($filename,"",$zip->getNameIndex($i));
-				if(substr($target, -1) == '/'){//
+				if(substr($target, -1) === '/'){//
 					continue;
 				}
 				if(!file_exists(dirname($output))){
@@ -73,7 +74,7 @@ class maker{
 					var_dump("error 展開が出来ませんでした... $target --> $output");
 				}
 			}
-			//$zip->extractTo(dirname(__FILE__)."/",[$filename."src",$filename."composer.json",$filename."composer.lock"]);
+			//$zip->extractTo(__DIR__."/",[$filename."src",$filename."composer.json",$filename."composer.lock"]);
 			$zip->close();
 			unlink($zippath);
 		}else{
@@ -88,7 +89,7 @@ class maker{
 	public function ComposerRun(){
 		$this->setcanReceiveShutdown(true);
 		if(isset($_SERVER['argv'][0])){
-			$_SERVER['argv'][0] = dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin". DIRECTORY_SEPARATOR . "composer.phar";
+			$_SERVER['argv'][0] = __DIR__ . DIRECTORY_SEPARATOR . "bin". DIRECTORY_SEPARATOR . "composer.phar";
 		}
 		$_SERVER['argv'][1] = "install";
 		$_SERVER['argv'][2] = "--no-dev";
@@ -113,15 +114,16 @@ class maker{
 			PREG_PATTERN_ORDER
 		);
 
-		$rootpath = dirname(__FILE__);
+		$rootpath = __DIR__;
 
-		$targetsubmodule = [
-			"src/pocketmine/lang/locale" => 0,
-			"src/pocketmine/resources/vanilla" => 0,
+		$excludesubmodule = [
+			"DevTools",
+			"preprocessor",
+			"build/php",
 		];
 
 		foreach($matches[1] as $key => $path1){
-			if(!isset($targetsubmodule[$path1])) continue;
+			foreach($excludesubmodule as $submodule) if(strpos($path1,$submodule) !== false) continue 2;
 			$array = explode("/", $path1);
 			$path = implode(DIRECTORY_SEPARATOR, $array);
 			$file = $array[count($array)-1];
@@ -139,12 +141,12 @@ class maker{
 			$res = $zip->open($zippath);
 			if($res === true){
 				$filename = $zip->getNameIndex(0);
-				//$zip->extractTo(dirname(__FILE__)."/".$path.DIRECTORY_SEPARATOR);
+				//$zip->extractTo(__DIR__."/".$path.DIRECTORY_SEPARATOR);
 				for($i = 1; $i < $zip->numFiles; $i++) {
 					//$zipfilename = "zip://".$zippath."#".$zip->getNameIndex($i);
 					$target = "zip://".$zippath."#".$zip->getNameIndex($i);
 					$output = $rootpath.DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR.str_replace($filename,"",$zip->getNameIndex($i));
-					if(substr($target, -1) == '/'){
+					if(substr($target, -1) === '/'){
 						continue;
 					}
 					//var_dump($target,$output);
@@ -167,7 +169,7 @@ class maker{
 		}
 	}
 
-	public function makephar(){
+	public function makephar($enableCompressAll = false){
 		$file_phar = "PocketMine-MP.phar";
 		if(file_exists($file_phar)){
  			echo "Phar file already exists, overwriting...";
@@ -177,22 +179,25 @@ class maker{
 		$files = [];
 		$phar = new Phar($file_phar, 0);
 		$phar->startBuffering();
-		$path = dirname(__FILE__)  . DIRECTORY_SEPARATOR;
+		$path = __DIR__  . DIRECTORY_SEPARATOR;
 		$phar->setSignatureAlgorithm(\Phar::SHA1);
-		foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path."src")) as $file){
-			if($file->isFile() === false){
-				continue;
+
+		$list = [
+			"src",
+			"vendor",
+			"resources",
+        ];
+		foreach($list as $value){
+		    if(!is_dir($path.$value)) continue;
+
+			foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path.$value)) as $file){
+				if($file->isFile() === false){
+					continue;
+				}
+				$files[str_replace($path, "", $file->getPathname())] = $file->getPathname();
 			}
-			$files[str_replace($path,"",$file->getPathname())] = $file->getPathname();
 		}
 
-		foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path."vendor")) as $file){
-			if($file->isFile() === false){
-				continue;
-			}
-			$files[str_replace($path,"",$file->getPathname())] = $file->getPathname();
-		}
-		//var_dump($files);
 		echo "圧縮しています...";
 		echo PHP_EOL;
 		$phar->buildFromIterator(new \ArrayIterator($files));
@@ -204,24 +209,45 @@ class maker{
 				$finfo->compress(\Phar::GZ);
 			}
 		}
+
+		/*if($enableCompressAll)){
+			echo "compressAll...";
+			$phar->compressFiles(Phar::GZ);
+		}*/
+
+        if(file_exists( __DIR__ ."/src/PocketMine.php")){
+	        $phar->setStub(<<<'STUB'
+<?php
+$tmpDir = sys_get_temp_dir();
+if(!is_readable($tmpDir) or !is_writable($tmpDir)){
+	echo "ERROR: tmpdir $tmpDir is not accessible." . PHP_EOL;
+	echo "Check that the directory exists, and that the current user has read/write permissions for it." . PHP_EOL;
+	echo "Alternatively, set 'sys_temp_dir' to a different directory in your php.ini file." . PHP_EOL;
+	exit(1);
+}
+require("phar://" . __FILE__ . "/src/PocketMine.php");
+__HALT_COMPILER();
+STUB);
+        }else{
+	        $phar->setStub('<?php require_once("phar://". __FILE__ ."/src/pocketmine/PocketMine.php");  __HALT_COMPILER();');
+        }
+
 		$phar->stopBuffering();
-		$phar->setStub('<?php require_once("phar://". __FILE__ ."/src/pocketmine/PocketMine.php");  __HALT_COMPILER();');
-//$phar->setStub('<?php define("pocketmine\\\\PATH", "phar://". __FILE__ ."/"); require_once("phar://". __FILE__ ."/src/pocketmine/PocketMine.php");  __HALT_COMPILER();');
 		echo "終了";
 		echo PHP_EOL;
 	}
 
 	public function cleanup(){
-		@unlink(dirname(__FILE__)  . DIRECTORY_SEPARATOR . ".gitmodules");
-		//@unlink(dirname(__FILE__)  . DIRECTORY_SEPARATOR . "composer.json");
-		//@unlink(dirname(__FILE__)  . DIRECTORY_SEPARATOR . "composer.lock");
+		//@unlink(__DIR__  . DIRECTORY_SEPARATOR . ".gitmodules");
+		//@unlink(__DIR__  . DIRECTORY_SEPARATOR . "composer.json");
+		//@unlink(__DIR__  . DIRECTORY_SEPARATOR . "composer.lock");
 	}
 
 	public function InstallComposerWithoutConfirmation(){
-		if(!file_exists(dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar")){
-			mkdir(dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin", 0744, true);
+		if(!file_exists(__DIR__ . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar")){
+			@mkdir(__DIR__ . DIRECTORY_SEPARATOR . "bin", 0744, true);
 		}
-		$this->downloadFile("https://getcomposer.org/composer-stable.phar",dirname(__FILE__) . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar");//
+		$this->downloadFile("https://getcomposer.org/composer-stable.phar",__DIR__ . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar");//
 	}
 
 	public function InstallComposerSafely(){
@@ -239,11 +265,11 @@ class maker{
 		}
 		//composer-setup.php --install-dir=bin
 		if(isset($argv[0])){
-			 $argv[0] = dirname(__FILE__) . DIRECTORY_SEPARATOR . "composer-setup.php";
+			 $argv[0] = __DIR__ . DIRECTORY_SEPARATOR . "composer-setup.php";
 		}
 		$argv[1] = "--install-dir=bin";
 		//$_SERVER['argc'] = count($_SERVER['argv']);
-		require dirname(__FILE__) . DIRECTORY_SEPARATOR . "composer-setup.php";
+		require __DIR__ . DIRECTORY_SEPARATOR . "composer-setup.php";
 	}
 
 	public function InstallComposerSafelyShutdown(){
