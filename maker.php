@@ -58,7 +58,6 @@ class maker{
 			$targetpath = "zip://".$zippath."#".$filename."src";
 			for($i = 0; $i < $zip->numFiles; $i++){
 				$zipfilename = "zip://".$zippath."#".$zip->getNameIndex($i);
-				var_dump($zip->getNameIndex($i));
 				if(strpos($zip->getNameIndex($i),$filename.'src/') === false&&strpos($zip->getNameIndex($i),$filename.'resources/') === false){
  					continue;
 				}
