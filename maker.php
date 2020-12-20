@@ -251,17 +251,19 @@ STUB);
 
 	public function InstallComposerSafely(){
 		$this->setcanReceiveShutdown(true);
-
+		echo "Downloading composer installer...".PHP_EOL;
 		copy('https://getcomposer.org/installer', 'composer-setup.php');
-		if(hash_file('sha384', 'composer-setup.php') === 'a5c698ffe4b8e849a443b120cd5ba38043260d5c4023dbf93e1558871f1f07f58274fc6f4c93bcfd858c6bd0775cd8d1'){
-			echo 'Installer verified';
-			echo PHP_EOL;
+		echo "Checking the correctness of composer installation...".PHP_EOL;
+		if(hash_file('sha384', 'composer-setup.php') === explode(" ", trim(file_get_contents("https://composer.github.io/installer.sha384sum")))[0]){
+			echo "installer sha384: verified".PHP_EOL;
 		}else{
-			echo 'Installer corrupt';
-			echo PHP_EOL;
+			echo "installer sha384: corrupt".PHP_EOL;
+			echo "error: The composer installer is incorrect.".PHP_EOL;
+			
 			unlink('composer-setup.php');
 			exit(1);
 		}
+		echo 'running "./composer-setup.php --install-dir=bin"'.PHP_EOL;
 		//composer-setup.php --install-dir=bin
 		if(isset($argv[0])){
 			 $argv[0] = __DIR__ . DIRECTORY_SEPARATOR . "composer-setup.php";
@@ -358,7 +360,8 @@ if(isset($_SERVER['argv'][1])){
 		case "cinv":
 			echo "「composer.phar」を検証せずにダウンロードしております...";
 			echo PHP_EOL;
-			$this->InstallComposerWithoutConfirmation();
+			$maker = new maker();
+			$maker->InstallComposerWithoutConfirmation();
 		break;
 		case "help":
 		case "h":
