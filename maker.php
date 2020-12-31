@@ -2,26 +2,29 @@
 class maker{
 	public $canReceiveShutdown = false;//
 
+	public $changecwd = null;//
+	public $cwd = null;//
+
 	public function run(String $pocketmine_mp_zip_url){
 		if(!file_exists(__DIR__. DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar")){
-			echo "「composer.phar」を検証せずにダウンロードしております...";
+			echo 'Download "composer.phar" without checking safety';
 			echo PHP_EOL;
 			$this->InstallComposerWithoutConfirmation();
 		}
 		if(!file_exists(__DIR__. DIRECTORY_SEPARATOR . "src")){
 			if(!self::isSafetyGithubURL($pocketmine_mp_zip_url)){
-				echo "指定致しましたurlは不正にてございます。";
+				echo "The specified url is invalid.";
 				return;
 			}
-			echo "Pocketmine-MPをダウンロードしています...(".$pocketmine_mp_zip_url.")";
+			echo "downloading Pocketmine-MP from (".$pocketmine_mp_zip_url.")";
 			echo PHP_EOL;
 			$this->downloadFile($pocketmine_mp_zip_url, __DIR__. DIRECTORY_SEPARATOR . "PocketMine-MP.zip");
-			echo "PocketMine-MPを解凍しております...";
+			echo "unzipping PocketMine-MP...";
 			echo PHP_EOL;
 			$this->pocketmine_mp_unzip();
 		}
 		if(!file_exists(__DIR__. DIRECTORY_SEPARATOR . "vendor")){
-			echo "「bin\composer.phar install --no-dev --classmap-authoritative」をプログラム内より実行しております...(exec未使用...)";
+			echo "running \"bin\\composer.phar install --no-dev --classmap-authoritative\" without using exec...";
 			echo PHP_EOL;
 			$this->ComposerRun();
 		}else{
@@ -31,11 +34,13 @@ class maker{
 
 	public function run1(){
 		if(file_exists(".gitmodules")){
-			echo "Pocketmine-MPの実行に必要なサブモジュールをダウンロード、展開しております...";
+
+
+			echo "Download and unpack the submodules needed to run Pocketmine-MP...";
 			echo PHP_EOL;
 			$this->submodule_add();
 		}
-		echo "「Pocketmine-MP.phar」を作成しております...";
+		echo 'creating... "Pocketmine-MP.phar"';
 		echo PHP_EOL;
 		$this->makephar();
 		echo "cleanup...";
@@ -70,7 +75,7 @@ class maker{
 					mkdir(dirname($output), 0744, true);
 				}
 				if(!copy($target,$output)){
-					var_dump("error 展開が出来ませんでした... $target --> $output");
+					var_dump("error: Failed to extract the file from the zip file. ($target ==> $output)");
 				}
 			}
 			//$zip->extractTo(__DIR__."/",[$filename."src",$filename."composer.json",$filename."composer.lock"]);
@@ -78,7 +83,7 @@ class maker{
 			unlink($zippath);
 		}else{
 			$zip->close();
-			echo "zip解凍エラー";
+			echo "error: Failed to unzip the zip file.";
 			echo PHP_EOL;
 			@unlink($zippath);
 			exit(1);
@@ -90,6 +95,11 @@ class maker{
 		if(isset($_SERVER['argv'][0])){
 			$_SERVER['argv'][0] = __DIR__ . DIRECTORY_SEPARATOR . "bin". DIRECTORY_SEPARATOR . "composer.phar";
 		}
+
+		echo "Change the current directory to \"".__DIR__."\"";
+		echo PHP_EOL;
+		chdir(__DIR__);//
+
 		$_SERVER['argv'][1] = "install";
 		$_SERVER['argv'][2] = "--no-dev";
 		$_SERVER['argv'][3] = "--classmap-authoritative";
@@ -128,7 +138,7 @@ class maker{
 			$file = $array[count($array)-1];
 			$zipfile = $file.".zip";
 			//var_dump($matches1[1][$key],$rootpath.DIRECTORY_SEPARATOR.$zipfile);
-			echo "download... ".$file;
+			echo "download... ".$file." (".$matches1[1][$key]."/archive/master.zip)";
 			echo PHP_EOL;
 			copy($matches1[1][$key]."/archive/master.zip",$rootpath.DIRECTORY_SEPARATOR.$zipfile);
 
@@ -153,14 +163,14 @@ class maker{
 						mkdir(dirname($output), 0744, true);
 					}
 					if(!copy($target,$output)){
-						var_dump("error 展開が出来ませんでした... $target --> $output");
+						var_dump("error: Failed to extract the file from the zip file. ($target ==> $output)");
 					}
 				}
 				$zip->close();
 				unlink($zippath);
 			}else{
 				$zip->close();
-				echo "zip解凍エラー";
+				echo "error: Failed to unzip the zip file.";
 				echo PHP_EOL;
 				@unlink($zippath);
 				exit(1);
@@ -185,7 +195,8 @@ class maker{
 			"src",
 			"vendor",
 			"resources",
-        ];
+		];
+
 		foreach($list as $value){
 		    if(!is_dir($path.$value)) continue;
 
@@ -197,7 +208,7 @@ class maker{
 			}
 		}
 
-		echo "圧縮しています...";
+		echo "added ".count($files)." files...";
 		echo PHP_EOL;
 		$phar->buildFromIterator(new \ArrayIterator($files));
 		$size = (1024 * 512);
@@ -227,12 +238,14 @@ if(!is_readable($tmpDir) or !is_writable($tmpDir)){
 require("phar://" . __FILE__ . "/src/PocketMine.php");
 __HALT_COMPILER();
 STUB);
-        }else{
-	        $phar->setStub('<?php require_once("phar://". __FILE__ ."/src/pocketmine/PocketMine.php");  __HALT_COMPILER();');
-        }
-
+	}else{
+		$phar->setStub('<?php require_once("phar://". __FILE__ ."/src/pocketmine/PocketMine.php");  __HALT_COMPILER();');
+		//for bluelight src etc...
+		//$phar->setStub('<?php require_once("phar://". __FILE__ ."/src/pocketmine/PocketMine.php");  __HALT_COMPILER();');
+//$phar->setStub('<?php define("pocketmine\\\\PATH", "phar://". __FILE__ ."/"); require_once("phar://". __FILE__ ."/src/pocketmine/PocketMine.php");  __HALT_COMPILER();');//
+	}
 		$phar->stopBuffering();
-		echo "終了";
+		//echo "end";
 		echo PHP_EOL;
 	}
 
@@ -315,13 +328,13 @@ function help(){
 	echo PHP_EOL;
 	echo "\033[1;33moption:\033[0m";
 	echo PHP_EOL;
-	echo "　\033[0;32m[make | m]\033[0m					https://github.com/pmmp/PocketMine-MP/archive/stable.zip よりPocketmine-MP.pharを作成致します。";
+	echo "　\033[0;32m[make | m]\033[0m					create \"Pocketmine-MP.phar\" from https://github.com/pmmp/PocketMine-MP/archive/stable.zip";
 	echo PHP_EOL;
-	echo "　\033[0;32m[phar | p]\033[0m					現在の存在する「src」フォルダと「vendor」フォルダよりPocketMine-MP.pharを作成致します。";
+	echo "　\033[0;32m[phar | p]\033[0m					Create PocketMine-MP.phar from the currently existing \"src\" and \"vendor\" folders.";
 	echo PHP_EOL;
-	echo "　\033[0;32m[composerinstall | ci]\033[0m			安全な方法にてcomposerを「bin/composer.phar」にインストールします。";
+	echo "　\033[0;32m[composerinstall | ci]\033[0m			Install composer in \"bin/composer.phar\" in a safe way.";
 	echo PHP_EOL;
-	echo "　\033[0;32m[composerinstallnv | cinv]\033[0m			composerを検証せずにcomposerを「bin/composer.phar」にインストールします。";
+	echo "　\033[0;32m[composerinstallnv | cinv]\033[0m			Install composer in \"bin/composer.phar\" without validating composer.";
 	echo PHP_EOL;
 }
 
@@ -342,7 +355,7 @@ if(isset($_SERVER['argv'][1])){
 		break;
 		case "phar":
 		case "p":
-			echo "「Pocketmine-MP.phar」を作成致しましております...";
+			echo "building Pocketmine-MP.phar...";
 			echo PHP_EOL;
 			$maker = new maker();
 			$maker->makephar();
@@ -350,7 +363,7 @@ if(isset($_SERVER['argv'][1])){
 		break;
 		case "composerinstall":
 		case "ci":
-			echo "安全な方法にて「composer.phar」をダウンロードしております...";
+			echo "downloading \"composer.phar\" in a safe way...";
 			echo PHP_EOL;
 			$maker = new maker();
 			register_shutdown_function([$maker,"InstallComposerSafelyShutdown"]);
@@ -358,7 +371,7 @@ if(isset($_SERVER['argv'][1])){
 		break;
 		case "composerinstallnv":
 		case "cinv":
-			echo "「composer.phar」を検証せずにダウンロードしております...";
+			echo "downloading \"composer.phar\" without verification...";
 			echo PHP_EOL;
 			$maker = new maker();
 			$maker->InstallComposerWithoutConfirmation();
