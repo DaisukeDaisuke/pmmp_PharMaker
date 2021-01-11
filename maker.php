@@ -1,6 +1,11 @@
 <?php
 class maker{
 	public $canReceiveShutdown = false;//
+	public $enableCompressAll = false;
+
+	public function __construct(){
+		$this->checkOption();
+	}
 
 	public function run(String $pocketmine_mp_zip_url){
 		if(!file_exists(__DIR__. DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar")){
@@ -200,15 +205,18 @@ class maker{
 		echo "圧縮しています...";
 		echo PHP_EOL;
 		$phar->buildFromIterator(new \ArrayIterator($files));
-		$size = (1024 * 512);
-		foreach($phar as $file => $finfo){
-			/** @var \PharFileInfo $finfo */
-			//if($finfo->getSize() > (1024 * 512)){//
-			if($finfo->getSize() > $size){//
-				$finfo->compress(\Phar::GZ);
+		if($this->enableCompressAll){
+			$phar->compressFiles(Phar::GZ);
+		}else{
+			$size = (1024 * 512);
+			foreach($phar as $file => $finfo){
+				/** @var \PharFileInfo $finfo */
+				//if($finfo->getSize() > (1024 * 512)){//
+				if($finfo->getSize() > $size){//
+					$finfo->compress(\Phar::GZ);
+				}
 			}
 		}
-
 		/*if($enableCompressAll)){
 			echo "compressAll...";
 			$phar->compressFiles(Phar::GZ);
@@ -281,6 +289,28 @@ STUB);
 		unlink('composer-setup.php');
 	}
 
+	function checkOption(){
+		$args = $_SERVER['argv'];
+		$count = count($args)-1;
+		for ($i = 1; $i <= $count; $i++) {
+			$option = strtolower($args[$i]);
+			/*if(($option[1] ?? "") === "-"){
+				$option = substr($option,2);
+			}
+
+			if(($option[0] ?? "") === "-"){
+				$option = substr($option,1);
+			}*/
+
+			switch($option){
+				case "--pharcompress":
+				case "-p":
+					$this->enableCompressAll = true;
+					break;
+			}
+		}
+	}
+
 	public function shutdown(){
 		if(!$this->iscanReceiveShutdown()){
 			return;
@@ -323,6 +353,11 @@ function help(){
 	echo PHP_EOL;
 	echo "　\033[0;32m[composerinstallnv | cinv]\033[0m			composerを検証せずにcomposerを「bin/composer.phar」にインストールします。";
 	echo PHP_EOL;
+	echo "\033[1;33msubOption:\033[0m";
+	echo PHP_EOL;
+	echo "　\033[0;32m[--pharcompress | -p]\033[0m				pharを「gz」にて圧縮します。";
+	echo PHP_EOL;
+	
 }
 
 if(isset($_SERVER['argv'][1])){
