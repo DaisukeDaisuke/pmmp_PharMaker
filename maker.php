@@ -20,7 +20,7 @@ class maker{
 			}
 			echo "Pocketmine-MPをダウンロードしています...(".$pocketmine_mp_zip_url.")";
 			echo PHP_EOL;
-			$this->downloadFile($pocketmine_mp_zip_url, __DIR__. DIRECTORY_SEPARATOR . "PocketMine-MP.zip");
+			self::downloadFile($pocketmine_mp_zip_url, __DIR__. DIRECTORY_SEPARATOR . "PocketMine-MP.zip");
 			echo "PocketMine-MPを解凍しております...";
 			echo PHP_EOL;
 			$this->pocketmine_mp_unzip();
@@ -51,7 +51,7 @@ class maker{
 	public function pocketmine_mp_unzip(){
 		$rootpath = __DIR__;
 		$zippath = $rootpath."/PocketMine-MP.zip";
-		
+
 		$zip = new ZipArchive();
 		$res = $zip->open($zippath);
 		if($res === true){
@@ -130,6 +130,7 @@ class maker{
 			foreach($excludesubmodule as $submodule) if(strpos($path1,$submodule) !== false) continue 2;
 			$array = explode("/", $path1);
 			$path = implode(DIRECTORY_SEPARATOR, $array);
+			var_dump($path);
 			$file = $array[count($array)-1];
 			$zipfile = $file.".zip";
 			//var_dump($matches1[1][$key],$rootpath.DIRECTORY_SEPARATOR.$zipfile);
@@ -140,71 +141,96 @@ class maker{
 			echo "unzip... ".$path;
 			echo PHP_EOL;
 			$zippath = $rootpath.DIRECTORY_SEPARATOR.$zipfile;
-
-			$zip = new ZipArchive();
-			$res = $zip->open($zippath);
-			if($res === true){
-				$filename = $zip->getNameIndex(0);
-				//$zip->extractTo(__DIR__."/".$path.DIRECTORY_SEPARATOR);
-				for($i = 1; $i < $zip->numFiles; $i++) {
-					//$zipfilename = "zip://".$zippath."#".$zip->getNameIndex($i);
-					$target = "zip://".$zippath."#".$zip->getNameIndex($i);
-					$output = $rootpath.DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR.str_replace($filename,"",$zip->getNameIndex($i));
-					if(substr($target, -1) === '/'){
-						continue;
-					}
-					//var_dump($target,$output);
-					if(!file_exists(dirname($output))){
-						mkdir(dirname($output), 0744, true);
-					}
-					if(!copy($target,$output)){
-						var_dump("error 展開が出来ませんでした... $target --> $output");
-					}
-				}
-				$zip->close();
-				unlink($zippath);
-			}else{
-				$zip->close();
-				echo "zip解凍エラー";
-				echo PHP_EOL;
-				@unlink($zippath);
-				exit(1);
-			}
+			$this->unzip($rootpath, $zippath, $path);
 		}
 	}
 
-	public function makephar($enableCompressAll = false){
-		$file_phar = "PocketMine-MP.phar";
+	public function unzip($rootpath, $zippath, $path){
+		$zip = new ZipArchive();
+		$res = $zip->open($zippath);
+		if($res === true){
+			$filename = $zip->getNameIndex(0);
+			//$zip->extractTo(__DIR__."/".$path.DIRECTORY_SEPARATOR);
+			for($i = 1; $i < $zip->numFiles; $i++) {
+				//$zipfilename = "zip://".$zippath."#".$zip->getNameIndex($i);
+				$target = "zip://".$zippath."#".$zip->getNameIndex($i);
+				$output = $rootpath.DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR.str_replace($filename,"",$zip->getNameIndex($i));
+				if(substr($target, -1) === '/'){
+					continue;
+				}
+				//var_dump($target,$output);
+				if(!file_exists(dirname($output))){
+					mkdir(dirname($output), 0744, true);
+				}
+				if(!copy($target,$output)){
+					var_dump("error 展開が出来ませんでした... $target --> $output");
+				}
+			}
+			$zip->close();
+			unlink($zippath);
+		}else{
+			$zip->close();
+			echo "zip解凍エラー";
+			echo PHP_EOL;
+			@unlink($zippath);
+			exit(1);
+		}
+	}
+
+	public function makephar(?string $path = null, ?array $list = null, string $file_phar = "PocketMine-MP.phar"){
 		if(file_exists($file_phar)){
  			echo "Phar file already exists, overwriting...";
  			echo PHP_EOL;
 			Phar::unlinkArchive($file_phar);
 	 	}
+
+		if($path === null){
+			$path = __DIR__  . DIRECTORY_SEPARATOR;
+		}
+
+		if($list === null){
+			$list = [
+				"src",
+				"vendor",
+				"resources",
+			];
+		}
+
 		$files = [];
 		$phar = new Phar($file_phar, 0);
 		$phar->startBuffering();
-		$path = __DIR__  . DIRECTORY_SEPARATOR;
+
 		$phar->setSignatureAlgorithm(\Phar::SHA1);
 
-		$list = [
-			"src",
-			"vendor",
-			"resources",
-        ];
 		foreach($list as $value){
-		    if(!is_dir($path.$value)) continue;
+			$target = $path.$value;
 
-			foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path.$value)) as $file){
+			if(is_file($target)){
+				$files[$value] = $target;
+				continue;
+			}
+		    if(!is_dir($target)) continue;
+
+			foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($target)) as $path1 => $file){
 				if($file->isFile() === false){
 					continue;
 				}
-				$files[str_replace($path, "", $file->getPathname())] = $file->getPathname();
+				$files[str_replace($path, "", $path1)] = $path1;
 			}
 		}
 
 		echo "圧縮しています...";
 		echo PHP_EOL;
 		$phar->buildFromIterator(new \ArrayIterator($files));
+		$size = (1024 * 512);
+		foreach($phar as $file => $finfo){
+			/** @var \PharFileInfo $finfo */
+			//if($finfo->getSize() > (1024 * 512)){//
+			if($finfo->getSize() > $size){//
+				$finfo->compress(\Phar::GZ);
+			}
+		}
+
 		if($this->enableCompressAll){
 			$phar->compressFiles(Phar::GZ);
 		}else{
@@ -254,7 +280,7 @@ STUB);
 		if(!file_exists(__DIR__ . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar")){
 			@mkdir(__DIR__ . DIRECTORY_SEPARATOR . "bin", 0744, true);
 		}
-		$this->downloadFile("https://getcomposer.org/composer-stable.phar",__DIR__ . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar");//
+		self::downloadFile("https://getcomposer.org/composer-stable.phar",__DIR__ . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "composer.phar");//
 	}
 
 	public function InstallComposerSafely(){
@@ -267,7 +293,7 @@ STUB);
 		}else{
 			echo "installer sha384: corrupt".PHP_EOL;
 			echo "error: The composer installer is incorrect.".PHP_EOL;
-			
+
 			unlink('composer-setup.php');
 			exit(1);
 		}
@@ -289,6 +315,28 @@ STUB);
 		unlink('composer-setup.php');
 	}
 
+	public function makeDevTols($url){
+		echo "DevToolsをダウンロード致しましております...";
+		if(!self::isSafetyGithubURL($url)){
+			echo "指定致しましたurlは不正にてございます。";
+			return;
+		}
+		$rootpath = __DIR__;
+		$zippath = $rootpath . DIRECTORY_SEPARATOR ."DevTools.zip";
+		$path = $rootpath . DIRECTORY_SEPARATOR . "DevTools"  . DIRECTORY_SEPARATOR;
+		$pharpath = "DevTools.phar";
+		$list = [
+			"resources",
+			"src",
+			"plugin.yml",
+			"LICENSE",
+		];
+
+		self::downloadFile($url,$zippath);
+		$this->unzip($rootpath, $zippath, $path);
+		$this->makephar($path, $list, $pharpath);
+	}
+
 	function checkOption(){
 		$args = $_SERVER['argv'];
 		$count = count($args)-1;
@@ -297,7 +345,6 @@ STUB);
 			/*if(($option[1] ?? "") === "-"){
 				$option = substr($option,2);
 			}
-
 			if(($option[0] ?? "") === "-"){
 				$option = substr($option,1);
 			}*/
@@ -306,6 +353,20 @@ STUB);
 				case "--pharcompress":
 				case "-p":
 					$this->enableCompressAll = true;
+					break;
+				case "-d":
+				case "--makes":
+					echo "「DevTools」を作成しております...";
+					echo PHP_EOL;
+					$maker = new maker();
+					$maker->makeDevTols("https://github.com/pmmp/DevTools/archive/master.zip");
+					break;
+				case "-m":
+				case "--makem":
+					echo "「DevTools」を作成しております...";
+					echo PHP_EOL;
+					$maker = new maker();
+					$maker->makeDevTols("https://github.com/pmmp/DevTools/archive/master.zip");
 					break;
 			}
 		}
@@ -331,9 +392,53 @@ STUB);
 		return (bool) preg_match('/https\:\/\/github.com\/(.*)\/(.*)\/archive\/(.*).zip/u', $url, $m);
 	}
 
-	public function downloadFile($url,$directory){
+	public static function isSafetyGithubDevToolsReleaseURL($url): array{
+		return [(bool) preg_match('/https\:\/\/github\.com\/(.*)\/(.*)\/releases\/download\/(.*)\/DevTools\.phar/u', $url, $m), $m[3] ?? "null"];
+	}
+
+	public static function downloadFile($url,$directory){
 		copy($url,$directory);//
 	}
+
+	public static function get($url,$data = false,$request = false){
+		if(strpos($url, "/") !== false){
+			$url = str_replace("https://api.github.com",  "", $url);
+		}
+		echo "\n";
+		if($request !== false){
+			var_dump($request.": ".$url);
+		}else if($data !== false){
+			var_dump("POST: ".$url);
+		}else{
+			var_dump("GET: ".$url);
+		}
+
+		$curl = curl_init("https://api.github.com".$url);
+
+		curl_setopt($curl,CURLOPT_SSL_VERIFYPEER, false); // オレオレ証明書対策
+		curl_setopt($curl,CURLOPT_FOLLOWLOCATION, true);// Locationヘッダを追跡
+
+		if($request !== false) curl_setopt($curl,CURLOPT_CUSTOMREQUEST,$request);
+		if($data !== false){
+			curl_setopt($curl,CURLOPT_POST, TRUE);
+			curl_setopt($curl, CURLOPT_POSTFIELDS,json_encode($data));
+		}
+
+		curl_setopt($curl,CURLOPT_USERAGENT,      "USER_AGENT");
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		$return = curl_exec($curl);
+
+		$errno = curl_errno($curl);
+		$error = curl_error($curl);
+		if($errno !== CURLE_OK){
+			throw new RuntimeException($error, $errno);
+		}
+
+		curl_close($curl);
+		$test = json_decode($return,true);
+		return $test;
+	}
+
 }
 
 function help(){
@@ -353,11 +458,10 @@ function help(){
 	echo PHP_EOL;
 	echo "　\033[0;32m[composerinstallnv | cinv]\033[0m			composerを検証せずにcomposerを「bin/composer.phar」にインストールします。";
 	echo PHP_EOL;
-	echo "\033[1;33msubOption:\033[0m";
+	echo "　\033[0;32m[d | makes]\033[0m					stableブランチ向けdevtoolsをgithub APIを用いてgithub releaseよりダウンロードします。";
 	echo PHP_EOL;
-	echo "　\033[0;32m[--pharcompress | -p]\033[0m				pharを「gz」にて圧縮します。";
+	echo "　\033[0;32m[m | makem]\033[0m					masterブランチ向けdevtoolsをgithubよりダウンロード、作成します。";
 	echo PHP_EOL;
-	
 }
 
 if(isset($_SERVER['argv'][1])){
@@ -398,6 +502,31 @@ if(isset($_SERVER['argv'][1])){
 			$maker = new maker();
 			$maker->InstallComposerWithoutConfirmation();
 		break;
+		case "d":
+		case "makes":
+			echo "「DevTools」を作成しております...";
+			echo PHP_EOL;
+			$return = maker::get("/repos/pmmp/DevTools/releases/latest");
+			if(!isset($return["assets"][0]["browser_download_url"])){
+				echo "error: The response from the github API is incorrect and you will not be able to download the release.";
+				echo PHP_EOL;
+			}
+			$downloadurl = $return["assets"][0]["browser_download_url"];
+			[$safety, $var] = maker::isSafetyGithubDevToolsReleaseURL($downloadurl);
+			if(!$safety){
+				echo "error: The download url received from the github API is invalid, so devTools cannot be downloaded.";
+				echo PHP_EOL;
+			}
+			echo "downloading DevTools ".$var."...";
+			maker::downloadFile($downloadurl,__DIR__);
+			break;
+		case "m":
+		case "maked":
+			echo "「DevTools」を作成しております...";
+			echo PHP_EOL;
+			$maker = new maker();
+			$maker->makeDevTols("https://github.com/pmmp/DevTools/archive/master.zip");
+			break;
 		case "help":
 		case "h":
 			help();
