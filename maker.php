@@ -406,11 +406,11 @@ STUB);
 		}
 		echo "\n";
 		if($request !== false){
-			var_dump($request.": ".$url);
+			$request.": https://api.github.com".$url."\n";
 		}else if($data !== false){
-			var_dump("POST: ".$url);
+			echo "POST: https://api.github.com".$url."\n";
 		}else{
-			var_dump("GET: ".$url);
+			echo "GET: https://api.github.com".$url."\n";
 		}
 
 		$curl = curl_init("https://api.github.com".$url);
@@ -518,7 +518,7 @@ if(isset($_SERVER['argv'][1])){
 				echo PHP_EOL;
 			}
 			echo "downloading DevTools ".$var."...";
-			maker::downloadFile($downloadurl,__DIR__);
+			maker::downloadFile($downloadurl,__DIR__."/DevTools.phar");
 			break;
 		case "m":
 		case "maked":
