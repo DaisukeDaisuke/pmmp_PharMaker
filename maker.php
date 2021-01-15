@@ -317,13 +317,15 @@ STUB);
 
 	public function makeDevTols($url){
 		echo "DevToolsをダウンロード致しましております...";
+		echo PHP_EOL;
 		if(!self::isSafetyGithubURL($url)){
 			echo "指定致しましたurlは不正にてございます。";
+			echo PHP_EOL;
 			return;
 		}
 		$rootpath = __DIR__;
 		$zippath = $rootpath . DIRECTORY_SEPARATOR ."DevTools.zip";
-		$path = $rootpath . DIRECTORY_SEPARATOR . "DevTools"  . DIRECTORY_SEPARATOR;
+		$path = "DevTools";
 		$pharpath = "DevTools.phar";
 		$list = [
 			"resources",
@@ -404,6 +406,7 @@ STUB);
 		if(strpos($url, "/") !== false){
 			$url = str_replace("https://api.github.com",  "", $url);
 		}
+		/*
 		echo "\n";
 		if($request !== false){
 			$request.": https://api.github.com".$url."\n";
@@ -412,6 +415,7 @@ STUB);
 		}else{
 			echo "GET: https://api.github.com".$url."\n";
 		}
+		*/
 
 		$curl = curl_init("https://api.github.com".$url);
 
@@ -504,7 +508,7 @@ if(isset($_SERVER['argv'][1])){
 		break;
 		case "d":
 		case "makes":
-			echo "「DevTools」を作成しております...";
+			echo "「DevTools」をダウンロードしております...";
 			echo PHP_EOL;
 			$return = maker::get("/repos/pmmp/DevTools/releases/latest");
 			if(!isset($return["assets"][0]["browser_download_url"])){
