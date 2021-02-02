@@ -464,7 +464,7 @@ function help(){
 	echo PHP_EOL;
 	echo "　\033[0;32m[d | makes]\033[0m					stableブランチ向けdevtoolsをgithub APIを用いてgithub releaseよりダウンロードします。";
 	echo PHP_EOL;
-	echo "　\033[0;32m[m | makem]\033[0m					masterブランチ向けdevtoolsをgithubよりダウンロード、作成します。";
+	echo "　\033[0;32m[s | made]\033[0m					masterブランチ向けdevtoolsをgithubよりダウンロード、作成します。";
 	echo PHP_EOL;
 }
 
@@ -524,7 +524,7 @@ if(isset($_SERVER['argv'][1])){
 			echo "downloading DevTools ".$var."...";
 			maker::downloadFile($downloadurl,__DIR__."/DevTools.phar");
 			break;
-		case "m":
+		case "s":
 		case "maked":
 			echo "「DevTools」を作成しております...";
 			echo PHP_EOL;
