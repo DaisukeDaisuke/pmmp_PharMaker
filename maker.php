@@ -525,7 +525,7 @@ if(isset($_SERVER['argv'][1])){
 			maker::downloadFile($downloadurl,__DIR__."/DevTools.phar");
 			break;
 		case "s":
-		case "maked":
+		case "made":
 			echo "「DevTools」を作成しております...";
 			echo PHP_EOL;
 			$maker = new maker();
