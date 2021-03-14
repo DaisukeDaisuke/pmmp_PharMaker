@@ -1,6 +1,8 @@
 # pmmp_PharMaker
 Githubダウンロードurlから必要なファイルをインターネットより取得致しまして、Pocketmine-MP.pharを作成致します。
 
+[english edition](https://github.com/DaisukeDaisuke/pmmp_PharMaker/tree/english)
+
 ## Usage
 ```
 usage:
