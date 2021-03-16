@@ -52,7 +52,7 @@ class maker{
 		$rootpath = __DIR__;
 		$zippath = $rootpath."/PocketMine-MP.zip";
 		
-		$zip = new ZipArchive();
+		$zip = new \ZipArchive();
 		$res = $zip->open($zippath);
 		if($res === true){
 			$filename = $zip->getNameIndex(0);
@@ -141,7 +141,7 @@ class maker{
 			echo PHP_EOL;
 			$zippath = $rootpath.DIRECTORY_SEPARATOR.$zipfile;
 
-			$zip = new ZipArchive();
+			$zip = new \ZipArchive();
 			$res = $zip->open($zippath);
 			if($res === true){
 				$filename = $zip->getNameIndex(0);
@@ -181,7 +181,7 @@ class maker{
 			Phar::unlinkArchive($file_phar);
 	 	}
 		$files = [];
-		$phar = new Phar($file_phar, 0);
+		$phar = new \Phar($file_phar, 0);
 		$phar->startBuffering();
 		$path = __DIR__  . DIRECTORY_SEPARATOR;
 		$phar->setSignatureAlgorithm(\Phar::SHA1);
